@@ -1,15 +1,9 @@
-from core.github_client import get_pull_request, get_pull_request_diff
-from core.repo_context import get_repo_files
-from agent.reviewer import review_pull_request
+import uvicorn
+from fastapi import FastAPI
+from api.routes import router
 
-owner = "josueaponte7"
-repo = "codereview-ai-agent"
-pr_number = 1
+app = FastAPI(title="CodeReview AI Agent")
+app.include_router(router)
 
-pr = get_pull_request(owner, repo, pr_number)
-diff = get_pull_request_diff(owner, repo, pr_number)
-files = get_repo_files(owner, repo)
-
-print(f"Revisando PR: {pr['title']}\n")
-review = review_pull_request(pr['title'], diff, files)
-print(review)
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
