@@ -1,0 +1,9 @@
+### Review PR
+POST http://localhost:8000/review
+Content-Type: application/json
+
+{
+  "owner": "josueaponte7",
+  "repo": "codereview-ai-agent",
+  "pr_number": 4
+}
