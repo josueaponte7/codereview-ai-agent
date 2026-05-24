@@ -7,4 +7,3 @@ AI agent that reviews Pull Requests with architectural criteria.
 - **Security Checks**: Identifies security vulnerabilities in the codebase.
 - **Documentation Review**: Ensures proper documentation of architectural decisions.
 - **Refactoring Suggestions**: Offers suggestions for code refactoring to improve maintainability.
-
