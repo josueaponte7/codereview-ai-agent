@@ -4,6 +4,7 @@ from core.github_client import get_pull_request, get_pull_request_diff
 from core.repo_context import get_repo_files
 from core.database import save_review, get_reviews
 from agent.reviewer import review_pull_request
+from fastapi import APIRouter, HTTPException, Request
 
 router = APIRouter()
 
@@ -57,3 +58,40 @@ async def list_reviews(owner: str, repo: str):
         return get_reviews(owner, repo)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/webhook")
+async def github_webhook(request: Request):
+    payload = await request.json()
+
+    # GitHub envía un ping al crear el webhook — ignorarlo correctamente
+    event = request.headers.get("X-Github-Event", "")
+    if event == "ping":
+        return {"status": "pong"}
+
+    action = payload.get("action")
+    if action not in ["opened", "reopened", "synchronize"]:
+        return {"status": "ignored"}
+
+    pr = payload.get("pull_request", {})
+    repo = payload.get("repository", {})
+
+    owner = repo["owner"]["login"]
+    repo_name = repo["name"]
+    pr_number = pr["number"]
+    pr_title = pr["title"]
+    author = pr["user"]["login"]
+
+    diff = get_pull_request_diff(owner, repo_name, pr_number)
+    files = get_repo_files(owner, repo_name)
+    review = review_pull_request(pr_title, diff, files)
+
+    save_review(
+        owner=owner,
+        repo=repo_name,
+        pr_number=pr_number,
+        pr_title=pr_title,
+        author=author,
+        review=review
+    )
+
+    return {"status": "reviewed", "veredicto": review["veredicto"]}
