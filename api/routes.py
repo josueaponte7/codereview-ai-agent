@@ -5,6 +5,7 @@ from core.repo_context import get_repo_files
 from core.database import save_review, get_reviews
 from agent.reviewer import review_pull_request
 from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
 
 router = APIRouter()
 
@@ -59,11 +60,26 @@ async def list_reviews(owner: str, repo: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+async def process_review(owner: str, repo_name: str, pr_number: int, pr_title: str, author: str):
+    try:
+        diff = get_pull_request_diff(owner, repo_name, pr_number)
+        files = get_repo_files(owner, repo_name)
+        review = review_pull_request(pr_title, diff, files)
+        save_review(
+            owner=owner,
+            repo=repo_name,
+            pr_number=pr_number,
+            pr_title=pr_title,
+            author=author,
+            review=review
+        )
+    except Exception as e:
+        print(f"Error procesando PR: {e}")
+
 @router.post("/webhook")
-async def github_webhook(request: Request):
+async def github_webhook(request: Request, background_tasks: BackgroundTasks):
     payload = await request.json()
 
-    # GitHub envía un ping al crear el webhook — ignorarlo correctamente
     event = request.headers.get("X-Github-Event", "")
     if event == "ping":
         return {"status": "pong"}
@@ -81,17 +97,6 @@ async def github_webhook(request: Request):
     pr_title = pr["title"]
     author = pr["user"]["login"]
 
-    diff = get_pull_request_diff(owner, repo_name, pr_number)
-    files = get_repo_files(owner, repo_name)
-    review = review_pull_request(pr_title, diff, files)
+    background_tasks.add_task(process_review, owner, repo_name, pr_number, pr_title, author)
 
-    save_review(
-        owner=owner,
-        repo=repo_name,
-        pr_number=pr_number,
-        pr_title=pr_title,
-        author=author,
-        review=review
-    )
-
-    return {"status": "reviewed", "veredicto": review["veredicto"]}
+    return {"status": "processing"}
