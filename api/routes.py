@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from core.github_client import get_pull_request, get_pull_request_diff
 from core.repo_context import get_repo_files
+from core.database import save_review, get_reviews
 from agent.reviewer import review_pull_request
 
 router = APIRouter()
@@ -33,10 +34,26 @@ async def review_pr(request: ReviewRequest):
         files = get_repo_files(request.owner, request.repo)
         review = review_pull_request(pr['title'], diff, files)
 
+        save_review(
+            owner=request.owner,
+            repo=request.repo,
+            pr_number=request.pr_number,
+            pr_title=pr['title'],
+            author=pr['user']['login'],
+            review=review
+        )
+
         return ReviewResponse(
             pr_title=pr['title'],
             author=pr['user']['login'],
             **review
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/reviews/{owner}/{repo}")
+async def list_reviews(owner: str, repo: str):
+    try:
+        return get_reviews(owner, repo)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

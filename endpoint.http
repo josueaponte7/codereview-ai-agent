@@ -7,3 +7,6 @@ Content-Type: application/json
   "repo": "codereview-ai-agent",
   "pr_number": 4
 }
+
+### Historial de revisiones
+GET http://localhost:8000/reviews/josueaponte7/codereview-ai-agent
