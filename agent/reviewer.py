@@ -9,10 +9,10 @@ llm = ChatGroq(
     temperature=0.2
 )
 
-def review_pull_request(pr_title: str, diff: str) -> str:
+def review_pull_request(pr_title: str, diff: str, repo_files: list[str] = None) -> str:
     messages = [
         SystemMessage(content=REVIEW_SYSTEM_PROMPT),
-        HumanMessage(content=build_review_prompt(diff, pr_title))
+        HumanMessage(content=build_review_prompt(diff, pr_title, repo_files))
     ]
     response = llm.invoke(messages)
     return response.content

@@ -18,12 +18,18 @@ SEGURIDAD: [observación]
 VEREDICTO: [APROBADO / CAMBIOS MENORES / CAMBIOS MAYORES]
 """
 
-def build_review_prompt(diff: str, pr_title: str) -> str:
+def build_review_prompt(diff: str, pr_title: str, repo_files: list[str] = None) -> str:
+    context = ""
+    if repo_files:
+        context = f"""
+ESTRUCTURA DEL REPO:
+{chr(10).join(repo_files)}
+"""
     return f"""
 PR: {pr_title}
-
+{context}
 DIFF:
 {diff}
 
-Por favor analiza este Pull Request.
+Por favor analiza este Pull Request teniendo en cuenta la estructura del proyecto.
 """
