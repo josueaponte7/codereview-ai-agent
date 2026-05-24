@@ -11,10 +11,19 @@ class ReviewRequest(BaseModel):
     repo: str
     pr_number: int
 
+class CategoryScore(BaseModel):
+    score: int
+    observacion: str
+
 class ReviewResponse(BaseModel):
     pr_title: str
     author: str
-    review: str
+    arquitectura: CategoryScore
+    naming: CategoryScore
+    solid: CategoryScore
+    deuda_tecnica: CategoryScore
+    seguridad: CategoryScore
+    veredicto: str
 
 @router.post("/review", response_model=ReviewResponse)
 async def review_pr(request: ReviewRequest):
@@ -27,7 +36,7 @@ async def review_pr(request: ReviewRequest):
         return ReviewResponse(
             pr_title=pr['title'],
             author=pr['user']['login'],
-            review=review
+            **review
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
